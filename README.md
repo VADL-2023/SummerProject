@@ -1,5 +1,9 @@
 # SummerProject
 
+## PlatformIO Setup
+1. Visual Studio Code Download: https://code.visualstudio.com/download
+2. PlatformIO Setup Tutorial: https://wiki.seeedstudio.com/Software-PlatformIO/#getting-started-with-platform-io-ide
+
 ## Git Practice
 We are going to use git for version control of this project. One of the benefits of git is the ability to branch, so everybody can work on their own copies of the code. The idea is that everybody works on their own copies of the code, and test it, and if the code works, we'll then merge it into the main branch via pull request and code review. Git works best with a command-line interface (terminal, command prompt, git bash, etc.) Here are some basic commands
 ###### General
