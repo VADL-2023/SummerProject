@@ -11,12 +11,18 @@ We are going to use git for version control of this project. One of the benefits
 
 ###### Pushing
 ```git add -A # Add all changed files to the git commit ```
+
 ``` git commit -m "Message" # The change/addition you are adding to the code base. Make commit messages specific as possible addressing what problems you are solving and how you solved them ```
+
 ``` git push # Pushes your local branch to the remote repository branch ```
+
 ###### Branches/Pulling
 ```git checkout <branch_name> # Switch code to this branch```
+
 ```git checkout -b <new_branch> <original_branch> # Creates new branch identical to original branch```
+
 ```git pull # Pulls remote branch updates into your current branch ```
+
 ###### Merging/Rebasing (We will hash this out later)
 1. Given: You made a feature branch and you want to merge into main
 2. Checkout master branch and perform git pull to make sure it is up to date
