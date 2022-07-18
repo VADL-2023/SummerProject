@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <SPI.h>
-#include <VectorNav.h>
 #include <Servo.h>
 
 Servo myservo;  // create servo object to control a servo 
@@ -8,7 +6,6 @@ Servo myservo;  // create servo object to control a servo
  
 int pos = 0;    // variable to store the servo position 
 
-VN200 IMU(10);
 
 void servoTest();
 
@@ -16,9 +13,8 @@ void imuTest();
 
 void setup() {
   myservo.attach(4);  // attaches the servo on pin 4
-  SPI.setSCK(14);
-  IMU.begin();
-  Serial.begin(9600);
+  Serial1.begin(9600);
+  Serial2.begin(9600);
 }
 
 void loop() {
@@ -40,13 +36,15 @@ void servoTest() {
 }
 
 void imuTest() {
-  double PosX, PosY, PosZ;
-  float yaw, pitch, roll, VelX, VelY, VelZ, ax, ay, az, gx, gy, gz;
-  IMU.getNavEcef(&yaw, &pitch, &roll, &PosX, &PosY, &PosZ, &VelX, &VelY, &VelZ, &ax, &ay, &az, &gx, &gy, &gz);
-  Serial.print("X/North Position: ");
-  Serial.println(PosX);
-  Serial.print("Y/East Position: ");
-  Serial.println(PosY);
-  Serial.print("Z/Down Position: ");
-  Serial.println(PosZ);
+  int incomingByte;
+  if(Serial1.available() > 0) {
+    incomingByte = Serial1.read();
+    Serial1.print("UART 1 received:");
+    Serial1.println(incomingByte, DEC);
+  }
+  if(Serial2.available() > 0) {
+    incomingByte = Serial2.read();
+    Serial2.print("UART 2 received:");
+    Serial2.println(incomingByte, DEC);
+  }
 }
