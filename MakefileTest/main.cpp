@@ -1,8 +1,6 @@
 #include "driver/IMU.hpp"
-
+#include <iostream>
 int main() {
-  IMU imu;
-  LOG log;
-  imu.receive
-  log.receive
+  std::cout << "Hello world" << std::endl;
+  return 0;
 }

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <pigpio.h>
 #include "config.hpp"
 #include "IMU.hpp"
 #include "../commonOutMutex.hpp"
@@ -88,7 +87,7 @@ void IMU::reset()
 		  cout << "IMU: Resetting" << endl; }
 
 		mImu.restoreFactorySettings();
-		gpioSleep(PI_TIME_RELATIVE, 2, 0);
+		//gpioSleep(PI_TIME_RELATIVE, 2, 0);
 
 		{ out_guard();
 		  cout << "IMU: Resetted" << endl; }
