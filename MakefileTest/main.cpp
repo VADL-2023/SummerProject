@@ -137,6 +137,7 @@ Ended Main
 // -------------------------
 // Read and Write Configuration
 // -------------------------
+command = "$";
 
 // -------------------------
 // Close Serial
