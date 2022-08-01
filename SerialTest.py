@@ -28,7 +28,7 @@ from time import sleep
 
 def main(args):
     print("Hello World")
-    ser = serial.Serial("/dev/ttyAMA0",115200) #Open Port with Baud Rate
+    ser = serial.Serial("/dev/ttyUSB0",115200) #Open Port with Baud Rate
     command = "$VNWRG,06,19*XX\r\n" #Quaternion cmd
     #command = "$VNWRG,06,02*XX\r\n" #Quaternion cmd
     command_as_bytes = command.encode()

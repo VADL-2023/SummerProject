@@ -19,14 +19,14 @@
 
 int main() {
   std::cout << "Started Main" << std::endl;
- 
+  int register_byte_size = 110;
   
 // -------------------------
 // Initial Serial Port Tests
 // -------------------------
 
   // check options by using 'ls -l /dev/t*' in terminal
-  int serial_port = open("/dev/ttyAMA0",O_RDWR);  //Serial ports are stored as files by pi, second argument is "open for read and write"
+  int serial_port = open("/dev/ttyUSB0",O_RDWR);  //Serial ports are stored as files by pi, second argument is "open for read and write"
   if (serial_port < 0){
     printf("Error %i from open: %s\n", errno, strerror(errno));
   }
@@ -110,7 +110,7 @@ int main() {
   // VMin and VTime are codependent - look at documentation for selection
   // Basically determines when we stop waiting for bits after calling read()
   my_tty.c_cc[VTIME] = 0; //Wait for up to x deciseconds, returning as soon as any data is received
-  my_tty.c_cc[VMIN] = 44;  //Note: IMU Measurement Register is 44 bytes
+  my_tty.c_cc[VMIN] = 0;  //Note: IMU Measurement Register is 44 bytes
 
 // -------------------------
 // Baud Rate
@@ -136,25 +136,31 @@ int main() {
   outfile.open("VN_Output.txt");
   
 // Write 
-unsigned char command[] = "$VNWRG,75,1,16,01,0029*XX\r\n";
+unsigned char command[] = "$VNWRG,06,19*XX\r\n";
 outfile << "Command: ";
 int n_written = 0, spot = 0;
 
-do{
-  n_written = write(serial_port, &command[spot],1);
-  spot+= n_written;
-  outfile << command[spot];
-  
-}while(command[spot-1] != '\r' && n_written > 0);
+n_written = write(serial_port, &command, sizeof command);
 
 outfile << '\n';
 
-// READ
-char response[44];
-memset(response, '\0', 44);
+// Read
 
-int n = read(serial_port, &response, 44);
+tcflush(serial_port, TCIFLUSH);
+tcflush(serial_port, TCOFLUSH);
+char response[register_byte_size];
+memset(response, '\0', register_byte_size);
+char startChar = 'x';
 
+int n = 0;
+
+
+while (startChar != '$'){ //Read until we get to the starting char
+  n += read(serial_port, &startChar, 1);
+  std::cout << "looking for startChar" << std::endl;
+}
+
+n = read(serial_port, &response, register_byte_size);
 
 if (n < 0) {
   printf("Error reading bytes: %s", strerror(errno));
