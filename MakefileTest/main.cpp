@@ -8,6 +8,7 @@
 #include "driver/IMU.hpp"
 #include <iostream>
 #include <stdio.h>
+#include <fstream>
 #include <string.h>
 
 // Linux Headers
@@ -27,13 +28,7 @@ int main() {
   // check options by using 'ls -l /dev/t*' in terminal
   int serial_port = open("/dev/ttyAMA0",O_RDWR);  //Serial ports are stored as files by pi, second argument is "open for read and write"
   if (serial_port < 0){
-    printf("Error %ivadl@raspberrypi:~/SummerProject/MakefileTest $ ./a.out
-Started Main
-Error 20 from open: Not a directory
-Error 9 from tcgetattr: Bad file descriptor
-Error 9 from tcsetattr: &s
-Ended Main
- from open: %s\n", errno, strerror(errno));
+    printf("Error %i from open: %s\n", errno, strerror(errno));
   }
   
   //Create new termios struct
@@ -114,18 +109,18 @@ Ended Main
 
   // VMin and VTime are codependent - look at documentation for selection
   // Basically determines when we stop waiting for bits after calling read()
-  my_tty.c_cc[VTIME] = 10; //Wait for up to 10 deciseconds, returning as soon as any data is received
-  my_tty.c_cc[VMIN] = 0;  //Note: IMU Measurement Register is 44 bytes
+  my_tty.c_cc[VTIME] = 0; //Wait for up to x deciseconds, returning as soon as any data is received
+  my_tty.c_cc[VMIN] = 44;  //Note: IMU Measurement Register is 44 bytes
 
 // -------------------------
 // Baud Rate
 // -------------------------
 
   // VN UART supports 9600 - 921600
-  cfsetispeed(&my_tty, B115200);
-  cfsetospeed(&my_tty, B115200);
+  int baud = 115200;
+  cfsetispeed(&my_tty, baud);
+  cfsetospeed(&my_tty, baud);
   
-
 // -------------------------
 // Save Termios Configuration
 // -------------------------
@@ -137,12 +132,49 @@ Ended Main
 // -------------------------
 // Read and Write Configuration
 // -------------------------
-command = "$";
+  std::ofstream outfile;
+  outfile.open("VN_Output.txt");
+  
+// Write 
+unsigned char command[] = "$VNWRG,75,1,16,01,0029*XX\r\n";
+outfile << "Command: ";
+int n_written = 0, spot = 0;
+
+do{
+  n_written = write(serial_port, &command[spot],1);
+  spot+= n_written;
+  outfile << command[spot];
+  
+}while(command[spot-1] != '\r' && n_written > 0);
+
+outfile << '\n';
+
+// READ
+char response[44];
+memset(response, '\0', 44);
+
+int n = read(serial_port, &response, 44);
+
+
+if (n < 0) {
+  printf("Error reading bytes: %s", strerror(errno));
+  return 1;
+}else{
+  printf("Read %i bytes, Response: %s\r\n",n,response);
+  outfile << "Response: " << response << '\n';
+}  
+
+//std::cout << "Raw Bytes: " << read_buf << std::endl;
+//printf("Message: %s \r\n", read_buf);
+
+
+//outfile << read_buf << '\n';
+outfile.close();
 
 // -------------------------
 // Close Serial
 // -------------------------
-  
+  close(serial_port);
   std::cout << "Ended Main" << std::endl;
   return 0;
 }

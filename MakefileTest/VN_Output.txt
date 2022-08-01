@@ -1,0 +1,3 @@
+Command: VNWRG,75,1,16,01,0029*XX
+
+Response: 
