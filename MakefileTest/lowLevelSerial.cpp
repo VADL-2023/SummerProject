@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <string.h>
+#include <cstring>
 
 // Linux Headers
 #include <fcntl.h> // File control (allows us to call 'open')
@@ -132,74 +133,78 @@ int configSerial(std::string port, int baud, int register_byte_size){
     return serial_port;
 }
 
-bool getStartChar(int serial_port, char target){
-   tcflush(serial_port, TCIFLUSH);
-   tcflush(serial_port, TCOFLUSH);
-   char startChar = target-1; //Dummy char so we enter loop looking for $
-   int i = 0, n = 0;
-   
-   while (startChar != target && i < 500000){ //Read until we get to the $
-      n += read(serial_port, &startChar, 1);
-      std::cout << "looking for startChar: " << startChar <<std::endl;
-      ++i;
-    }
-    
-    if (i >= 100000){
-      return false;
-    }else{
-      printf("Found starting $ in %i reads! \n", n);
-      return true;
-    }
-}
-    
 int main() {
   
     // Set up Serial port, outfstream
-    int register_byte_size = 107; //110 Chars for IMU
+    int register_byte_size = 110; //110 Chars for IMU
     int serial_port = configSerial("/dev/ttyUSB0", 115200, register_byte_size);
     std::ofstream outfile;
     outfile.open("VN_Output.txt");
+    
+    // Set up local variables
+    char response[register_byte_size*2];
+    memset(response, '\0', register_byte_size*2);
+    int responseIndex = 0, validReads = 0, i = 0, n = 0;
   
     // Write Command to IMU 
     unsigned char command[] = "$VNWRG,06,19*XX\r\n"; //Command to read from IMU Measurement Register
-
     int n_written = write(serial_port, &command, sizeof command);
-
-    // Check for the first dollar sign
-
-    if (!getStartChar(serial_port, '$')){
-      std::cout << "could not find target char" << std::endl;
-      return 1;
-    }
+    tcflush(serial_port, TCOFLUSH);
     
-    // Get the next chunk of bits
+    // How many readings do we want?
+    for (int jj = 0; jj < 100; ++jj){
     
-    char response[register_byte_size];
-    memset(response, '\0', register_byte_size);
-    char trash[2];
-
-    char pressure[9];
-    memset(pressure, '\0', sizeof pressure);
-    int n = 0;
-    
-    // Generate 50 lines of data
-    for (int i = 0; i < 200; ++i){
-      n += read(serial_port, &response, register_byte_size); // Get the whole VNIMU line
-      n+= read(serial_port, &trash, 2); // Trash the newline/return chars
-      outfile << response << '\n'; //Write all IMU data to file
+    // Read until we read in a dollar sign
+      tcflush(serial_port, TCIFLUSH);
       
-      // Parse the data to get pressure
-      std::cout << "Pressure: " << pressure << std::endl;
-      for (int j = 96; j<104; ++j){ //Parse 
-        pressure[j-96] = response[j];
+      responseIndex = 0;
+      std::cout << "Looking for startChar."<<std::endl;
+      while (response[0] != '$' && i < 100000){ //Read until we get to the $
+        n += read(serial_port, &response[responseIndex], 1);
+        ++i;
       }
-    }
-  
     
-    if (n < 0) {
-      printf("Error reading bytes: %s", strerror(errno));
-      //return 1;
+      if (i >= 100000){
+        std::cout << "Could not find startChar, try running program again" << std::endl;
+        return 1;
+      }else{
+        printf("Found startChar $ in %i reads! \n", n);
+        responseIndex++;
+      }
+    
+    // Take in bits until newline
+
+      n = 0;
+      char curChar = 'x';
+      
+      while (curChar != '\n'){
+      n += read(serial_port, &response[responseIndex], 1); // Get the whole VNIMU line
+      curChar = response[responseIndex];
+      responseIndex++;
+      }
+      
+      std::string outStr(reinterpret_cast<char*>(response), responseIndex);
+      std::cout << outStr << std::endl;
+      
+      if (outStr.length() < register_byte_size){
+        printf("Incomplete packet, newline detected %i bytes after startChar", responseIndex);
+        memset(response, '\0', register_byte_size*2);
+      }else{ 
+        outfile << outStr;
+        validReads++;
+      }
+  
+      char pressure[12];
+                // Parse the data to get pressure
+        for (int j = 95; j<106; ++j){ //Parse 
+          pressure[j-96] = response[j];
+        }
+        
+      std::cout << "Pressure: " << pressure << std::endl;  
+      memset(pressure, '\0', sizeof pressure);
+      
     }
+ 
     outfile.close();
 
     // -------------------------
