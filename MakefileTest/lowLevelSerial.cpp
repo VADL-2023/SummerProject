@@ -67,7 +67,6 @@ int configSerial(std::string port, int baud, int register_byte_size){
     //my_tty.c_cflag &= ~CRTSCTS; //Disable control
     my_tty.c_cflag |= CRTSCTS; //Enable control
     
-    
     // Cread and Clocal
     my_tty.c_cflag |= CREAD | CLOCAL; //CREAD allows us to read 
     
@@ -133,6 +132,7 @@ int configSerial(std::string port, int baud, int register_byte_size){
     return serial_port;
 }
 
+
 int main() {
   
     // Set up Serial port, outfstream
@@ -178,9 +178,14 @@ int main() {
       char curChar = 'x';
       
       while (curChar != '\n'){
-      n += read(serial_port, &response[responseIndex], 1); // Get the whole VNIMU line
-      curChar = response[responseIndex];
-      responseIndex++;
+        if (curChar == '$'){
+          memset(response, '\0', responseIndex*2);
+          response[0] = '$';
+          responseIndex = 1;
+        }
+        n += read(serial_port, &response[responseIndex], 1); // Get the whole VNIMU line
+        curChar = response[responseIndex];
+        responseIndex++;
       }
       
       std::string outStr(reinterpret_cast<char*>(response), responseIndex);
@@ -194,14 +199,11 @@ int main() {
         validReads++;
       }
   
-      char pressure[12];
-                // Parse the data to get pressure
-        for (int j = 95; j<106; ++j){ //Parse 
-          pressure[j-96] = response[j];
-        }
+      std::string pressureStr = outStr.substr(98, 7);
+      
+      float pressurekPa = std::stof(pressureStr);
         
-      std::cout << "Pressure: " << pressure << std::endl;  
-      memset(pressure, '\0', sizeof pressure);
+      std::cout << "Pressure: " << pressurekPa << std::endl;  
       
     }
  
